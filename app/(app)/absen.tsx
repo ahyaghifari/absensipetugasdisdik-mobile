@@ -12,6 +12,7 @@ import NotOnLocation from '@/components/NotOnLocation';
 import SearchLocation from '@/components/SearchLocation';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
+import { useSession } from '../ctx';
 // import { useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 
 
@@ -21,6 +22,7 @@ type Position = {
 }
 
 export default function Absen() {
+    const {session} = useSession()
     const navigation = useNavigation();
     const {sudahAbsen} = useLocalSearchParams<{sudahAbsen: string}>()
     const cameraRef = useRef<CameraView | null>(null)
@@ -60,8 +62,8 @@ export default function Absen() {
                 longitude: loc.coords.longitude
             }))
             setOnLocation(true)
-                            setLoc(loc)
-                            setPermissions(true)
+            setLoc(loc)
+            setPermissions(true)
             // try {
             //     const reqLoc = await fetch(ApiUrl + '/location',{
             //         method: 'POST',
@@ -95,7 +97,9 @@ export default function Absen() {
             name: 'photo.png',
             type:'image/png'
         })as any)
-        formData.append('username', 'ahyaghifari')
+        if(session){
+            formData.append('nik', session.nik)
+        }
         try {
             const req = await fetch(ApiUrl +  '/absen',{
                 method:'POST',
@@ -189,12 +193,12 @@ export default function Absen() {
             </View>
             <View className='p-2 flex-row items-center justify-center'>
                 <Image
-                    style={{height: 110, width: 110}}
+                    style={{height: 100, width: 100}}
                     source={require('@/assets/images/onlocation.gif')}
                     contentFit="cover"
                     />
                 <View>
-                    <Text style={{fontFamily:'Poppins-Bold'}} className='text-lg text-gray-600'>Muhammad Ahya Ghifari</Text>
+                    <Text style={{fontFamily:'Poppins-Bold'}} className=' text-gray-600'>Muhammad Ahya Ghifari</Text>
                     <Text style={{fontFamily:'Poppins-Regular'}} className='text-gray-500 text-sm'>Petugas Kebersihan</Text>
                 </View>
             </View> 
@@ -246,7 +250,7 @@ export default function Absen() {
              {!onAbsen && (
                 <TouchableOpacity onPress={absen} disabled={photoUri == ""} style={{opacity: (photoUri == "" ? 0.6:1)}} className='bg-emerald-500 w-fit mx-auto px-5 py-4 rounded-full mt-5 flex-row border-4 border-emerald-200'>
                     <Entypo name="check" size={30} color="white" />
-                    <Text style={{fontFamily:'Poppins-Regular'}} className='text-white text-2xl'>{sudahAbsen == 'true' ? 'Simpan' : 'Absen'}</Text>
+                    <Text style={{fontFamily:'Poppins-Regular'}} className='text-white text-xl'>{sudahAbsen == 'true' ? 'Simpan' : 'Absen'}</Text>
                 </TouchableOpacity>
                 )}
                 {onAbsen && (

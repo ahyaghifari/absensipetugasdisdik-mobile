@@ -1,13 +1,16 @@
-import { View, Text,TextInput, StyleSheet, TouchableOpacity } from "react-native";
-import { useNavigation, router } from "expo-router";
+import ApiUrl from "@/api/ApiUrl";
+import type { UserSession } from "@/constants/UserSession";
+import { Image } from "expo-image";
+import { router, useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
-import { Color } from "@/constants/Color";
-import { Image } from "react-native";
-
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useSession } from "./ctx";
 
 export default function Login(){
     const navigation = useNavigation();
-    const [username,setUsername] = useState("")
+    const {signIn} = useSession()
+    const [onLogin, setOnLogin] = useState(false)
+    const [email,setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
     useEffect(()=>{
@@ -17,34 +20,47 @@ export default function Login(){
 
     const login = async () =>{
         setError("")
-        if(username == "" || password == ""){
+        if(email == "" || password == ""){
             setError("Username dan password belum diisi")
             return
         }
+        setOnLogin(true)
         const formData = new FormData()
-        formData.append("username", username)
+        formData.append("email", email)
         formData.append("password", password)
 
         try {
-            const req = await fetch('http://localhost:8080/api/login',{
+            const req = await fetch(ApiUrl + '/login',{
                 method:'POST',
                 body:formData,
             })
             const res = await req.json()
-            if(res.status == 400){
-                setError("Username atau password belum benar")
+            if(res.status != 200){
+                setError(res.messages.error)
                 setPassword("")
+                setOnLogin(false)
                 return
             }
+            let userData : UserSession={
+                email: res.user.email,
+                nama: res.user.nama,
+                nik: res.user.nik,
+                jabatan:res.user.jabatan,
+                token: res.access_token
+            }
+
+            signIn(userData)
             router.navigate('/')
         } catch (error) {
-           setError("Username atau password belum benar")
+        //    setError("Username atau password belum benar")
         }
     }
 
     return (
-        <View style={{flex:1, backgroundColor:Color.blue, padding:35, justifyContent:'center', position:'relative'}}>
-            <View style={{position:'absolute', top:10, marginRight:'auto', marginLeft:'auto', flexDirection:'row', alignItems:'center'}}>
+        <View className="bg-blue-600 h-full w-full flex-1 justify-center justify-items-center content-center align-center relative">
+            <View className="h-1/2 w-full bg-white top-0 absolute"></View>
+            
+            <View className="absolute top-5 w-full flex-row justify-center items-center">
                 <View style={{padding:2.5, backgroundColor:'white', borderRadius:5}}>
                  <Image
                     style={{height: 25, width: 80, backgroundColor:'white',objectFit:'contain'}}
@@ -52,32 +68,38 @@ export default function Login(){
                     />
                 </View>
                 <View style={{marginLeft:8}}>
-                    <Text style={{fontFamily:'Poppins-Regular', color:'white', opacity:0.7, fontSize:11}}>Aplikasi Absensi Petugas</Text>
-                    <Text style={{fontFamily:'Poppins-Regular', color:'white', fontSize:11}}>Dinas Pendidikan Kota Banjarbaru</Text>
+                    <Text style={{fontFamily:'Poppins-bold'}} className="text-blue-500 text-xs">Aplikasi Absensi Petugas</Text>
+                    <Text style={{fontFamily:'Poppins-Regular'}}className="text-gray-500 text-xs">Dinas Pendidikan Kota Banjarbaru</Text>
                 </View>
             </View>
-            <View style={{padding:20, backgroundColor:'white',borderRadius:10, gap:15}}>
+           
+            <View className="absolute bg-white shadow-sm shadow-gray-700 p-3 rounded-lg mx-auto w-11/12 left-0 right-0">
                 {error != "" && (
                 <View style={{backgroundColor:'#fee2e2', padding:5,borderRadius:5}}>
-                    <Text style={{color:'#b91c1c', fontSize:12, textAlign:'center'}}>Username dan password belum diisi</Text>
+                    <Text style={{color:'#b91c1c',textAlign:'center'}} className="text-xs">{error}</Text>
                 </View>
                 )}
-                <Text style={{textAlign:'center', fontFamily:'Poppins-Regular', fontWeight:'bold', fontSize:25, color: Color.blue}}>Login</Text>
+                <Text style={{textAlign:'center', fontFamily:'Poppins-Bold', fontWeight:'bold', fontSize:25}} className="text-gray-700">Login</Text>
                 <TextInput 
-                style={styles.input}
-                onChangeText={setUsername}
-                value={username}
-                placeholder="Masukkan Username"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 my-3"
+                onChangeText={setEmail}
+                value={email}
+                placeholder="Masukkan Email"
                 />
                 <TextInput 
-                style={styles.input}
+               className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                 onChangeText={setPassword}
                 value={password}
                 placeholder="Masukkan Password"
                 secureTextEntry={true}
                 />
-                <TouchableOpacity onPress={login} style={{backgroundColor:'#10b981',opacity: 1,  marginLeft: 'auto', marginRight:'auto', padding: 10, paddingLeft:30, paddingRight:30, borderRadius: 20}}>
-                    <Text style={{fontFamily:'Poppins-Regular', color:'white', fontWeight:'bold', textAlign:'center'}}>&#128640; Masuk</Text>
+                <TouchableOpacity onPress={login} disabled={onLogin} className="bg-emerald-500 px-3 py-2 rounded-lg mt-5 w-fit mx-auto">
+                    {!onLogin && (
+                        <Text style={{fontFamily:'Poppins-Regular', color:'white', textAlign:'center'}}>&#128640; Masuk</Text>
+                    )}
+                    {onLogin && (
+                        <ActivityIndicator size="small" color="white" />
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

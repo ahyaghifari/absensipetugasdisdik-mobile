@@ -1,11 +1,14 @@
 import ApiUrl from '@/api/ApiUrl';
+import { Jadwal } from '@/api/Jadwal';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { Link, useNavigation } from 'expo-router';
 import { useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { formatTanggalIndonesia } from '../../functions/Time';
+import { useSession } from '../ctx';
 
 type BerandaData = {
   nama: string,
@@ -14,7 +17,10 @@ type BerandaData = {
   hadir: number,
   absen: number,
   sakit: number,
-  sudahAbsen: boolean
+  sudahAbsen: boolean,
+  bisaAbsen: boolean,
+  jadwal: Jadwal | null,
+  jadwal_berikutnya: Jadwal[] | null
 }
 
 const defaultProfile :BerandaData ={
@@ -24,33 +30,71 @@ const defaultProfile :BerandaData ={
   hadir: 0,
   absen: 0,
   sakit: 0,
-  sudahAbsen: false
+  sudahAbsen: false,
+  bisaAbsen: false,
+  jadwal: null,
+  jadwal_berikutnya: null
 } 
 export default function Index() {
   const [profile, setProfile] = useState<BerandaData>(defaultProfile)
-  const absen = () => alert("TEKAN")
+  const absen = () => alert("TEKAN")  
   const navigation = useNavigation();
   const [sudahAbsen, setSudahAbsen] = useState(false)
-
-
+  const {signOut, session} = useSession()
   
   useEffect(() => {
     const getProfile = async ()=>{
-      const req = await fetch(ApiUrl + '/beranda',{method:'get'})
+      if(session){
+      const params = new URLSearchParams({
+        'nik' : session.nik
+      })
+      const req = await fetch(ApiUrl + '/beranda?' + params,{method:'get'})
       if(req){
-        const res = await req.json().then((r) => {
-          const data :BerandaData={
-                  nama : r.nama,
-                  nik: r.nik,
-                  jabatan: r.jabatan,
-                  hadir: r.hadir,
-                  absen: r.absen,
-                  sakit: r.sakit,
-                  sudahAbsen: true
-                }
-            setProfile(data)
-        })
+        const res = await req.json()
+        console.log(res)
+        let jadwal : Jadwal | null = null
+        let jadwal_berikutnya : Jadwal[] | null = null
+        
+        if(res.jadwal != null){
+          jadwal = {
+            tanggal: null,
+            kantor: res.jadwal.nama_kantor,
+            shift:res.jadwal.shift,
+            jam_absen_mulai: res.jadwal.waktu_absen_mulai,
+            jam_absen_pulang: res.jadwal.waktu_absen_pulang
+          }
+        }
+
+        if(res.jadwal_berikutnya != null){
+          jadwal_berikutnya = []
+          res.jadwal_berikutnya.forEach((jb: {
+            tanggal: string | null; nama_kantor: any; shift: any; 
+            }) => {
+            jadwal_berikutnya?.push({
+              tanggal: jb.tanggal,
+              kantor: jb.nama_kantor,
+              shift: jb.shift,
+              jam_absen_mulai: "",
+              jam_absen_pulang: ""
+            })
+          });
+        }
+
+        const data : BerandaData= {
+            nama : session.nama,
+            nik: session.nik,
+            jabatan: session.jabatan,
+            hadir: res.hadir,
+            absen: res.absen,
+            sakit: res.sakit,
+            sudahAbsen: res.sudah_absen,
+            bisaAbsen: res.bisa_absen,
+            jadwal: jadwal,
+            jadwal_berikutnya: jadwal_berikutnya
+        }
+        setProfile(data)
       }
+    }
         
     }
     getProfile()
@@ -83,19 +127,19 @@ export default function Index() {
       {/* NAMA */}
       <View className='flex-row mt-2 gap-2'>
         <AntDesign name="user" size={24} color="#1f2937" />
-        <Text style={{fontFamily:'Poppins-Bold'}} className='text-gray-600 text-xl'>{profile.nama}</Text>
+        <Text style={{fontFamily:'Poppins-Bold'}} className='text-gray-700 text-lg'>{profile.nama}</Text>
       </View>
       {/* NIK */}
       <View className='flex-row mt-1 gap-2'>
         <AntDesign name="idcard" size={18} color="#71717a" />
-        <Text className='text-sm text-gray-500' style={{fontFamily:'Poppins-Regular'}} >{profile.nik}</Text>
+        <Text className='text-xs text-gray-600' style={{fontFamily:'Poppins-Regular'}} >{profile.nik}</Text>
       </View>
       {/* JABATAN */}
       <View className='flex-row mt-1 gap-2'>
-        <Text className='text-sm text-gray-500' style={{fontFamily:'Poppins-Regular'}} >{profile.jabatan}</Text>
+        <Text className='text-xs text-gray-600' style={{fontFamily:'Poppins-Regular'}} >{profile.jabatan}</Text>
       </View>
 
-      <TouchableOpacity style={{backgroundColor:'#d1d5db', width:80,  marginLeft: 'auto', marginRight:'auto', padding: 5,marginTop: 8, borderRadius: 20}} onPress={absen}>
+      <TouchableOpacity style={{backgroundColor:'#d1d5db', width:80,  marginLeft: 'auto', marginRight:'auto', padding: 5,marginTop: 8, borderRadius: 20}} onPress={signOut}>
           <Text style={{color:'#6b7280',textAlign:'center', fontSize:10}}>Pengaturan</Text>
         </TouchableOpacity>
       </View>
@@ -134,16 +178,23 @@ export default function Index() {
 
     {/* ABSEN */}
     {/* BELUM ABSEN */}
-    {profile.sudahAbsen == false && (
+    {profile.sudahAbsen == false && profile.jadwal != null && (
     <View style={{ marginTop:15, backgroundColor: '#10b981', marginRight:30, marginLeft:30, borderRadius: 10, padding: 10}}>
-    <Text style={{textAlign:'center', fontFamily:'Poppins-Regular', color:'white', fontSize:12, fontWeight:'bold'}}>Jadwal Hari ini : 08.00 - 12.00</Text>
-    <View style={{display:'flex', flexDirection:'row', justifyContent:'center', gap:4}}>
-      <MaterialCommunityIcons name="office-building-marker" size={18} color="white" />
-      <Text style={{textAlign:'center', fontSize:14, color:'white'}}>Kantor Blue Umbrella</Text>
-    </View>
-        <Link href="/absen" style={{backgroundColor:'white',  marginLeft: 'auto', marginRight:'auto', padding: 10, paddingLeft:25, paddingRight:25, marginTop: 15, borderRadius: 20}}>
+        <View style={{display:'flex', flexDirection:'row', justifyContent:'center', gap:4}}>
+          <MaterialCommunityIcons name="office-building-marker" size={20} color="white" />
+          <Text style={{fontFamily:'Poppins-Bold'}} className='text-white font-semibold text-sm'>{profile.jadwal.kantor} | {profile.jadwal.shift}</Text>
+        </View>
+        <Text style={{fontFamily:'Poppins-Regular'}} className='text-white text-xs text-center mt-1'>Waktu Absen : {profile.jadwal.jam_absen_mulai} - {profile.jadwal.jam_absen_pulang}</Text>
+        
+        {/* jika bisa absen sesuai jam  */}
+        {profile.bisaAbsen && (
+          <Link href="/absen" className='bg-white mt-3 w-fit py-2 px-3 rounded-full mx-auto shadow shadow-emerald-300'>
           <Text style={{fontFamily:'Poppins-Regular', color:'#10b981', fontWeight:'bold', textAlign:'center'}}>&#128070; Absen Sekarang</Text>
         </Link>
+        )}
+        {!profile.bisaAbsen && (
+          <Text style={{fontFamily:'Poppins-Regular'}} className='text-xs text-center opacity-75 mt-3 text-white'>Anda tidak bisa melakukan absen saat ini</Text>
+        )}
     </View>
     )}
     {/* SUDAH ABSEN */}
@@ -173,10 +224,15 @@ export default function Index() {
             <Text style={{fontFamily:'Poppins-Regular', color:'#10b981', textAlign:'center', fontSize:10}}>Lihat Jadwal</Text>
           </TouchableOpacity>
       </View>
-      <View style={{marginTop: 8}}>
-        <Text style={{fontSize:11, color:'#4b5563', marginBottom:10}}>Sabtu, 25 Agustus 2025, Pukul 08.00 - 10.00 | Kantor Blue Umbrella</Text>
-        <Text style={{fontSize:11, color:'#4b5563', marginBottom:10}}>Minggu, 26 Agustus 2025, Pukul 08.00 - 10.00 | Markas Chris Redfield</Text>
-      </View>
+
+      {profile.jadwal_berikutnya != null && (
+        <FlatList data={profile.jadwal_berikutnya} renderItem={({item, index}) => (
+          <View style={{marginTop: 8}}>
+          <Text className='text-xs text-gray-600 mb-5'>{formatTanggalIndonesia(item.tanggal)}, {item.kantor} | {item.shift}</Text>
+        </View>
+        )}
+        />
+      )}
     </View>
 
     </ScrollView>
