@@ -177,6 +177,17 @@ export default function Index() {
       <View className='h-0.5 my-4 w-full bg-gray-200'></View>
 
     {/* ABSEN */}
+    {/* JIKA LIBUR */}
+    {profile.jadwal == null && (
+      <View className='flex w-11/12 mx-auto flex-row items-center justify-center p-2 rounded-lg border border-red-500 gap-3'>
+        <Image
+        style={{height: 30, width: 30}}
+        source={require('@/assets/images/smile-libur.gif')}
+        contentFit="cover"
+      />
+        <Text className='text-red-500 text-xs' style={{fontFamily:'Poppins-Regular'}}>Anda hari ini libur, tidak ada absen.</Text>
+      </View>
+    )}
     {/* BELUM ABSEN */}
     {profile.sudahAbsen == false && profile.jadwal != null && (
     <View style={{ marginTop:15, backgroundColor: '#10b981', marginRight:30, marginLeft:30, borderRadius: 10, padding: 10}}>
@@ -227,8 +238,8 @@ export default function Index() {
 
       {profile.jadwal_berikutnya != null && (
         <FlatList data={profile.jadwal_berikutnya} renderItem={({item, index}) => (
-          <View style={{marginTop: 8}}>
-          <Text className='text-xs text-gray-600 mb-5'>{formatTanggalIndonesia(item.tanggal)}, {item.kantor} | {item.shift}</Text>
+          <View className='my-2'>
+          <Text className='text-xs text-gray-600'>{formatTanggalIndonesia(item.tanggal)}, {item.kantor} | {item.shift}</Text>
         </View>
         )}
         />
