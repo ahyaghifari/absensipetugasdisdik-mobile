@@ -1,3 +1,4 @@
+import { Absensi } from '@/api/Absensi';
 import ApiUrl from '@/api/ApiUrl';
 import { Jadwal } from '@/api/Jadwal';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -20,6 +21,8 @@ type BerandaData = {
   sudahAbsen: boolean,
   bisaAbsen: boolean,
   jadwal: Jadwal | null,
+  absensi: Absensi|null,
+  jumlah_foto_kegiatan: number,
   jadwal_berikutnya: Jadwal[] | null
 }
 
@@ -33,6 +36,8 @@ const defaultProfile :BerandaData ={
   sudahAbsen: false,
   bisaAbsen: false,
   jadwal: null,
+  absensi: null,
+  jumlah_foto_kegiatan: 0,
   jadwal_berikutnya: null
 } 
 export default function Index() {
@@ -53,6 +58,7 @@ export default function Index() {
         const res = await req.json()
         console.log(res)
         let jadwal : Jadwal | null = null
+        let absensi : Absensi|null = null
         let jadwal_berikutnya : Jadwal[] | null = null
         
         if(res.jadwal != null){
@@ -62,6 +68,14 @@ export default function Index() {
             shift:res.jadwal.shift,
             jam_absen_mulai: res.jadwal.waktu_absen_mulai,
             jam_absen_pulang: res.jadwal.waktu_absen_pulang
+          }
+        }
+
+        if(res.absensi != null){
+          absensi = {
+            jumlah_kegiatan: res.absensi.jumlah_kegiatan,
+            created_at: res.absensi.created_at,
+            status_kehadiran: res.absensi.status_kehadiran
           }
         }
 
@@ -90,6 +104,8 @@ export default function Index() {
             sudahAbsen: res.sudah_absen,
             bisaAbsen: res.bisa_absen,
             jadwal: jadwal,
+            absensi: absensi,
+            jumlah_foto_kegiatan: res.jadwal.jumlah_foto_kegiatan,
             jadwal_berikutnya: jadwal_berikutnya
         }
         setProfile(data)
@@ -112,10 +128,8 @@ export default function Index() {
     >
       <View className='bg-blue-600 p-3'>
         <Text style={{color: 'white', fontFamily: 'Poppins-Regular', fontSize:12, opacity: 0.7}}>Aplikasi Absensi Petugas</Text>
-        {/* <Text style={{color: 'white', fontFamily: 'Poppins-Regular', fontSize:12}}>Dinas Pendidikan Kota Banjarbaru</Text> */}
-        <Text style={{color: 'white', fontFamily: 'Poppins-Regular', fontSize:12}}>Dinas Pendidikan Kota Banjarbaru</Text>
+        <Text style={{color: 'white', fontFamily: 'Poppins-Regul`ar', fontSize:12}}>Dinas Pendidikan Kota Banjarbaru</Text>
         <Text style={{color: '#374151', marginTop: 15, fontFamily: 'Poppins-Regular', fontSize:13, backgroundColor: 'white', borderRadius: 10, padding: 4,}}>Selamat datang dan selamat bekerja &#128527;&#128077;</Text>
-       
       </View>
       
       <View style={{display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop:10}}>
@@ -209,18 +223,20 @@ export default function Index() {
     </View>
     )}
     {/* SUDAH ABSEN */}
-    {profile.sudahAbsen == true && (
+    {profile.sudahAbsen == true && profile.absensi != null && (
       <View className="bg-emerald-500 mt-3 w-11/12 mx-auto border border-emerald-500 rounded-lg">
-        <Text className="text-white text-center p-2 text-xs" style={{fontFamily:'Poppins-Regular'}}>Anda sudah absen hari ini pada pukul 18.02</Text>
+        <Text className="text-white text-center p-2 text-xs" style={{fontFamily:'Poppins-Regular'}}>Anda sudah absen hari ini pada pukul {profile.absensi.created_at}</Text>
         <View className="bg-white rounded-b-lg px-2 pb-4">
-          <Text className="text-red-700 text-center p-1 mt-2 w-fit mx-auto rounded text-[11px] bg-red-100" style={{fontFamily:'Poppins-Regular'}}>Foto Kegiatan 2/3 </Text>
+          <Text className="text-red-700 text-center p-1 mt-2 w-fit mx-auto r  ounded text-[11px] bg-red-100" style={{fontFamily:'Poppins-Regular'}}>Foto Kegiatan {profile.absensi.jumlah_kegiatan}/{profile.jumlah_foto_kegiatan} </Text>
           <View className='flex-row mt-4 justify-center gap-5'>
           <Link href="/absensi" className='bg-white p-2 rounded-lg hover:bg-emerald-100 border border-emerald-500'>
             <Text style={{fontFamily:'Poppins-Regular'}} className="text-emerald-600 text-sm">&#128203; Lihat Absensi</Text>
           </Link>
-          <Link href={{pathname: '/absen', params:{sudahAbsen: 'true'}}} className='bg-emerald-500 p-2 rounded-lg hover:bg-emerald-600'>
+          {profile.jumlah_foto_kegiatan != profile.absensi.jumlah_kegiatan && (
+            <Link href={{pathname: '/absen', params:{sudahAbsen: 'true'}}} className='bg-blue-500 p-2 rounded-lg hover:bg-emerald-600'>
             <Text style={{fontFamily:'Poppins-Regular'}} className="text-white text-sm">&#128247; Foto Kegiatan</Text>
           </Link>
+          )}
           </View>
         </View>
       </View>

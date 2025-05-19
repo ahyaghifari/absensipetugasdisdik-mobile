@@ -89,8 +89,14 @@ export default function Absen() {
         }
     }
     
-    const absen = async ()=>{
+    const send = async ()=>{
         setOnAbsen(true)
+        let url = "/absen" // jika belum absen
+
+        if(sudahAbsen != undefined){ // jika sudah absen berarti foto kegiatan
+            url = "/foto-kegiatan"
+        }
+
         let formData = new FormData()
         formData.append('photo', JSON.stringify({
             uri: photoSend,
@@ -100,13 +106,15 @@ export default function Absen() {
         if(session){
             formData.append('nik', session.nik)
         }
+
         try {
-            const req = await fetch(ApiUrl +  '/absen',{
+            const req = await fetch(ApiUrl +  url,{
                 method:'POST',
                 body:formData,
             })
+            const res = await req.json()
             if(req.status == 200){
-                Toast.success("Absen berhasil dilakukan :)")
+                Toast.success(res.message)
                 setTimeout(() => {
                     router.replace('/')
                 }, 1000);
@@ -248,7 +256,7 @@ export default function Absen() {
            
              {/* TOMBOL ABSEN */}
              {!onAbsen && (
-                <TouchableOpacity onPress={absen} disabled={photoUri == ""} style={{opacity: (photoUri == "" ? 0.6:1)}} className='bg-emerald-500 w-fit mx-auto px-5 py-4 rounded-full mt-5 flex-row border-4 border-emerald-200'>
+                <TouchableOpacity onPress={send} disabled={photoUri == ""} style={{opacity: (photoUri == "" ? 0.6:1)}} className='bg-emerald-500 w-fit mx-auto px-5 py-4 rounded-full mt-5 flex-row border-4 border-emerald-200'>
                     <Entypo name="check" size={30} color="white" />
                     <Text style={{fontFamily:'Poppins-Regular'}} className='text-white text-xl'>{sudahAbsen == 'true' ? 'Simpan' : 'Absen'}</Text>
                 </TouchableOpacity>
