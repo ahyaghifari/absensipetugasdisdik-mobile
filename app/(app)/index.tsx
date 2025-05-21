@@ -22,6 +22,9 @@ type BerandaData = {
   bisaAbsen: boolean,
   jadwal: Jadwal | null,
   absensi: Absensi|null,
+  jam_absen_mulai: string,
+  jam_absen_pulang: string,
+  libur: boolean,
   jumlah_foto_kegiatan: number,
   jadwal_berikutnya: Jadwal[] | null
 }
@@ -37,9 +40,13 @@ const defaultProfile :BerandaData ={
   bisaAbsen: false,
   jadwal: null,
   absensi: null,
+  jam_absen_mulai: '-',
+  jam_absen_pulang: '-',
+  libur: false,
   jumlah_foto_kegiatan: 0,
   jadwal_berikutnya: null
 } 
+
 export default function Index() {
   const [profile, setProfile] = useState<BerandaData>(defaultProfile)
   const absen = () => alert("TEKAN")  
@@ -64,10 +71,8 @@ export default function Index() {
         if(res.jadwal != null){
           jadwal = {
             tanggal: null,
-            kantor: res.jadwal.nama_kantor,
+            kantor: res.jadwal.kantor,
             shift:res.jadwal.shift,
-            jam_absen_mulai: res.jadwal.waktu_absen_mulai,
-            jam_absen_pulang: res.jadwal.waktu_absen_pulang
           }
         }
 
@@ -87,9 +92,7 @@ export default function Index() {
             jadwal_berikutnya?.push({
               tanggal: jb.tanggal,
               kantor: jb.nama_kantor,
-              shift: jb.shift,
-              jam_absen_mulai: "",
-              jam_absen_pulang: ""
+              shift: jb.shift
             })
           });
         }
@@ -105,6 +108,9 @@ export default function Index() {
             bisaAbsen: res.bisa_absen,
             jadwal: jadwal,
             absensi: absensi,
+            libur: res.libur,
+            jam_absen_mulai: res.waktu_absen_awal,
+            jam_absen_pulang: res.waktu_absen_akhir,
             jumlah_foto_kegiatan: res.jadwal.jumlah_foto_kegiatan,
             jadwal_berikutnya: jadwal_berikutnya
         }
@@ -192,7 +198,7 @@ export default function Index() {
 
     {/* ABSEN */}
     {/* JIKA LIBUR */}
-    {profile.jadwal == null && (
+    {profile.libur == true && (
       <View className='flex w-11/12 mx-auto flex-row items-center justify-center p-2 rounded-lg border border-red-500 gap-3'>
         <Image
         style={{height: 30, width: 30}}
@@ -207,9 +213,9 @@ export default function Index() {
     <View style={{ marginTop:15, backgroundColor: '#10b981', marginRight:30, marginLeft:30, borderRadius: 10, padding: 10}}>
         <View style={{display:'flex', flexDirection:'row', justifyContent:'center', gap:4}}>
           <MaterialCommunityIcons name="office-building-marker" size={20} color="white" />
-          <Text style={{fontFamily:'Poppins-Bold'}} className='text-white font-semibold text-sm'>{profile.jadwal.kantor} | {profile.jadwal.shift}</Text>
+          <Text style={{fontFamily:'Poppins-Bold'}} className='text-white font-semibold text-sm'>{profile.jadwal.kantor} {profile.jadwal.shift != null ? '| ' + profile.jadwal.shift : ''}</Text>
         </View>
-        <Text style={{fontFamily:'Poppins-Regular'}} className='text-white text-xs text-center mt-1'>Waktu Absen : {profile.jadwal.jam_absen_mulai} - {profile.jadwal.jam_absen_pulang}</Text>
+        <Text style={{fontFamily:'Poppins-Regular'}} className='text-white text-xs text-center mt-1'>Waktu Absen : {profile.jam_absen_mulai} - {profile.jam_absen_pulang}</Text>
         
         {/* jika bisa absen sesuai jam  */}
         {profile.bisaAbsen && (
@@ -227,7 +233,7 @@ export default function Index() {
       <View className="bg-emerald-500 mt-3 w-11/12 mx-auto border border-emerald-500 rounded-lg">
         <Text className="text-white text-center p-2 text-xs" style={{fontFamily:'Poppins-Regular'}}>Anda sudah absen hari ini pada pukul {profile.absensi.created_at}</Text>
         <View className="bg-white rounded-b-lg px-2 pb-4">
-          <Text className="text-red-700 text-center p-1 mt-2 w-fit mx-auto r  ounded text-[11px] bg-red-100" style={{fontFamily:'Poppins-Regular'}}>Foto Kegiatan {profile.absensi.jumlah_kegiatan}/{profile.jumlah_foto_kegiatan} </Text>
+          <Text className="text-blue-700 text-center p-1 mt-2 w-fit mx-auto rounded text-[11px] bg-blue-100" style={{fontFamily:'Poppins-Regular'}}>Foto Kegiatan {profile.absensi.jumlah_kegiatan}/{profile.jumlah_foto_kegiatan} </Text>
           <View className='flex-row mt-4 justify-center gap-5'>
           <Link href="/absensi" className='bg-white p-2 rounded-lg hover:bg-emerald-100 border border-emerald-500'>
             <Text style={{fontFamily:'Poppins-Regular'}} className="text-emerald-600 text-sm">&#128203; Lihat Absensi</Text>
@@ -241,9 +247,9 @@ export default function Index() {
         </View>
       </View>
     )}
-    
 
     {/* JADWAL BERIKUTNYA */}
+    {profile.jadwal_berikutnya != null && (
     <View style={{marginLeft: 30, marginRight:30, marginTop:30}}>
       <View style={{display:'flex', flexDirection:'row', justifyContent:'space-between', borderBottomWidth:1, paddingBottom:8, borderBottomColor:'#d4d4d8'}}>
         <Text style={{fontSize:14, color:'#374151',fontWeight:'600'}}>Jadwal berikutnya</Text>
@@ -261,6 +267,7 @@ export default function Index() {
         />
       )}
     </View>
+    )}
 
     </ScrollView>
   );
