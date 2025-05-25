@@ -3,5 +3,6 @@ export type UserSession = {
   nama: string,
   nik: string,
   jabatan: string,
+  photo: string | null,
   token: string
 }

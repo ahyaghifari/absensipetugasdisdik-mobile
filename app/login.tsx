@@ -3,7 +3,7 @@ import type { UserSession } from "@/constants/UserSession";
 import { Image } from "expo-image";
 import { router, useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSession } from "./ctx";
 
 export default function Login(){
@@ -45,6 +45,7 @@ export default function Login(){
                 email: res.user.email,
                 nama: res.user.nama,
                 nik: res.user.nik,
+                photo: null,
                 jabatan:res.user.jabatan,
                 token: res.access_token
             }
@@ -57,10 +58,10 @@ export default function Login(){
     }
 
     return (
-        <View className="bg-blue-600 h-full w-full flex-1 justify-center justify-items-center content-center align-center relative">
+        <SafeAreaView className="bg-blue-600 h-full w-full flex-1 justify-center items-center relative">
             <View className="h-1/2 w-full bg-white top-0 absolute"></View>
             
-            <View className="absolute top-5 w-full flex-row justify-center items-center">
+            <View className="absolute top-16 w-full flex-row justify-center items-center mx-auto">
                 <View style={{padding:2.5, backgroundColor:'white', borderRadius:5}}>
                  <Image
                     style={{height: 25, width: 80, backgroundColor:'white',objectFit:'contain'}}
@@ -73,7 +74,7 @@ export default function Login(){
                 </View>
             </View>
            
-            <View className="absolute bg-white shadow-sm shadow-gray-700 p-3 rounded-lg mx-auto w-11/12 left-0 right-0">
+            <View className="absolute bg-white shadow-sm shadow-gray-700 p-3 rounded-lg left-auto right-auto w-10/12">
                 {error != "" && (
                 <View style={{backgroundColor:'#fee2e2', padding:5,borderRadius:5}}>
                     <Text style={{color:'#b91c1c',textAlign:'center'}} className="text-xs">{error}</Text>
@@ -81,13 +82,13 @@ export default function Login(){
                 )}
                 <Text style={{textAlign:'center', fontFamily:'Poppins-Bold', fontWeight:'bold', fontSize:25}} className="text-gray-700">Login</Text>
                 <TextInput 
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 my-3"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 my-3"
                 onChangeText={setEmail}
                 value={email}
                 placeholder="Masukkan Email"
                 />
                 <TextInput 
-               className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                 onChangeText={setPassword}
                 value={password}
                 placeholder="Masukkan Password"
@@ -95,14 +96,17 @@ export default function Login(){
                 />
                 <TouchableOpacity onPress={login} disabled={onLogin} className="bg-emerald-500 px-3 py-2 rounded-lg mt-5 w-fit mx-auto">
                     {!onLogin && (
-                        <Text style={{fontFamily:'Poppins-Regular', color:'white', textAlign:'center'}}>&#128640; Masuk</Text>
+                        <View className="flex flex-row gap-2 items-center">
+                            <Text>&#128640;</Text>
+                            <Text style={{fontFamily:'Poppins-Regular', color:'white', textAlign:'center'}}>Masuk</Text>
+                        </View>
                     )}
                     {onLogin && (
                         <ActivityIndicator size="small" color="white" />
                     )}
                 </TouchableOpacity>
             </View>
-        </View>
+        </SafeAreaView>
     )
 }
 

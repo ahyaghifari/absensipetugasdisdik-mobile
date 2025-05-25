@@ -1,4 +1,5 @@
 import type { UserSession } from "@/constants/UserSession";
+import * as FileSystem from 'expo-file-system';
 import { createContext, use, type PropsWithChildren } from 'react';
 import { useStorageState } from './useStorageState';
 
@@ -16,7 +17,7 @@ const AuthContext = createContext<{
 });
 
 // This hook can be used to access the user info.
-export function useSession() {
+function useSession() {
   const value = use(AuthContext);
   if (!value) {
     throw new Error('useSession must be wrapped in a <SessionProvider />');
@@ -25,7 +26,7 @@ export function useSession() {
   return value;
 }
 
-export function SessionProvider({ children }: PropsWithChildren) {
+function SessionProvider({ children }: PropsWithChildren) {
   const [[isLoading, rawSession], setSession] = useStorageState('session');
   const session = rawSession ? JSON.parse(rawSession) as UserSession : null
 
@@ -36,7 +37,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
           // Perform sign-in logic here
           setSession(JSON.stringify(userData));
         },
-        signOut: () => {
+        signOut: async () => {
+            //  hapus foto profil
+            const fileUri = FileSystem.documentDirectory + 'profile.png';
+            const fileInfo = await FileSystem.getInfoAsync(fileUri);
+            if (fileInfo.exists) {
+              await FileSystem.deleteAsync(fileUri, { idempotent: true });
+            }
           setSession(null);
         },
         session,
@@ -46,3 +53,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     </AuthContext>
   );
 }
+
+export { SessionProvider, useSession };
+

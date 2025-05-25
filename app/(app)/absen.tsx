@@ -61,31 +61,32 @@ export default function Absen() {
                 latitude: loc.coords.latitude,
                 longitude: loc.coords.longitude
             }))
-            setOnLocation(true)
-            setLoc(loc)
-            setPermissions(true)
-            // try {
-            //     const reqLoc = await fetch(ApiUrl + '/location',{
-            //         method: 'POST',
-            //         body: formLoc
-            //     })
-            //     if(reqLoc){
-            //         const res =await reqLoc.json()
-            //         if(res){
-            //             console.log(res)
-            //             if(res.status != 200){
-            //                 setOnLocation(false)
-            //                 setLoc(loc)
-            //             }else{
-            //                 setOnLocation(true)
-            //                 setLoc(loc)
-            //                 setPermissions(true)
-            //             }
-            //         }
-            //     }
-            // } catch (err) {
+            // setOnLocation(true)
+            // setLoc(loc)
+            // setPermissions(true)
+            try {
+                const reqLoc = await fetch(ApiUrl + '/location',{
+                    method: 'POST',
+                    body: formLoc
+                })
+                if(reqLoc){
+                    const res =await reqLoc.json()
+                    console.log(res)
+                    if(res){
+                        console.log(res)
+                        if(res.status != 200){
+                            setOnLocation(false)
+                            setLoc(loc)
+                        }else{
+                            setOnLocation(true)
+                            setLoc(loc)
+                            setPermissions(true)
+                        }
+                    }
+                }
+            } catch (err) {
                 
-            // }
+            }
         }
     }
     
@@ -120,7 +121,6 @@ export default function Absen() {
                 }, 1000);
             }
         } catch (error) {
-            console.error(error)
             setOnAbsen(false)
         }
     }

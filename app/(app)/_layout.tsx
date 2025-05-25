@@ -27,5 +27,7 @@ export default function RootLayout() {
     <Stack.Screen name="login" options={{title:'Login'}}></Stack.Screen>
     <Stack.Screen name="absen" options={{title:'Absensi', }}></Stack.Screen>
     <Stack.Screen name="absensi" options={{title:'Absensi'}}></Stack.Screen>
+    <Stack.Screen name="ubah_profile" options={{title: 'Ubah Foto Profik', presentation: 'modal'}}></Stack.Screen>
+    <Stack.Screen name="ubah_password" options={{title:'Ubah Password'}}></Stack.Screen>
   </Stack>;
 }

@@ -2,12 +2,14 @@ import { Absensi } from '@/api/Absensi';
 import ApiUrl from '@/api/ApiUrl';
 import { Jadwal } from '@/api/Jadwal';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import * as FileSystem from 'expo-file-system';
 import { Image } from 'expo-image';
 import { Link, useNavigation } from 'expo-router';
 import { useEffect, useState } from "react";
-import { FlatList, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Platform, Text, TouchableOpacity, View } from "react-native";
 import { formatTanggalIndonesia } from '../../functions/Time';
 import { useSession } from '../ctx';
 
@@ -48,12 +50,41 @@ const defaultProfile :BerandaData ={
 } 
 
 export default function Index() {
+  const defaultPhotoProfile = "https://img.icons8.com/3d-fluency/94/user-male-circle.png"
+  const [photoProfile, setPhotoProfil] = useState("")
   const [profile, setProfile] = useState<BerandaData>(defaultProfile)
   const absen = () => alert("TEKAN")  
   const navigation = useNavigation();
   const [sudahAbsen, setSudahAbsen] = useState(false)
   const {signOut, session} = useSession()
   
+  const logout = () =>{
+    if(Platform.OS == 'web'){
+      if(confirm('Yakin logout') == true){
+        signOut()
+      }
+    }else{
+      return Alert.alert('Logout', 'Yakin ingin logout?', [
+        {
+          text: 'Batal',
+          onPress: () => false,
+          style: 'cancel',
+        },
+        {text: 'Ya, saya yakin', onPress: () => signOut()},
+      ]);
+    }
+  } 
+  
+   const loadSavedImage = async () => {
+    const fileUri = FileSystem.documentDirectory + 'profile.png';
+    const fileInfo = await FileSystem.getInfoAsync(fileUri);
+    if (fileInfo.exists) {
+      setPhotoProfil(fileInfo.uri)
+    } else {
+      setPhotoProfil(defaultPhotoProfile); // tidak ada file tersimpan
+    }
+  };
+
   useEffect(() => {
     const getProfile = async ()=>{
       if(session){
@@ -63,7 +94,7 @@ export default function Index() {
       const req = await fetch(ApiUrl + '/beranda?' + params,{method:'get'})
       if(req){
         const res = await req.json()
-        console.log(res)
+        // console.log(res)
         let jadwal : Jadwal | null = null
         let absensi : Absensi|null = null
         let jadwal_berikutnya : Jadwal[] | null = null
@@ -111,7 +142,7 @@ export default function Index() {
             libur: res.libur,
             jam_absen_mulai: res.waktu_absen_awal,
             jam_absen_pulang: res.waktu_absen_akhir,
-            jumlah_foto_kegiatan: res.jadwal.jumlah_foto_kegiatan,
+            jumlah_foto_kegiatan: (res.jadwal == null)  ? 0: res.jadwal.jumlah_foto_kegiatan,
             jadwal_berikutnya: jadwal_berikutnya
         }
         setProfile(data)
@@ -120,30 +151,34 @@ export default function Index() {
         
     }
     getProfile()
+    setPhotoProfil(defaultPhotoProfile)
+    loadSavedImage()
     navigation.setOptions({ headerShown: false });
   }, []);
 
   return (
     
-    <ScrollView
-    contentContainerStyle={{flexGrow:1}}
+    <View 
       style={{
         flex: 1,
         backgroundColor: 'white',
       }}
     >
-      <View className='bg-blue-600 p-3'>
+      <View className='bg-blue-600 p-3 pt-12'>
         <Text style={{color: 'white', fontFamily: 'Poppins-Regular', fontSize:12, opacity: 0.7}}>Aplikasi Absensi Petugas</Text>
         <Text style={{color: 'white', fontFamily: 'Poppins-Regul`ar', fontSize:12}}>Dinas Pendidikan Kota Banjarbaru</Text>
         <Text style={{color: '#374151', marginTop: 15, fontFamily: 'Poppins-Regular', fontSize:13, backgroundColor: 'white', borderRadius: 10, padding: 4,}}>Selamat datang dan selamat bekerja &#128527;&#128077;</Text>
       </View>
       
-      <View style={{display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop:10}}>
+      <View style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}} className='mt-8'>
+      <View style={{height:94, width:94}} className='rounded-full overflow-hidden'>
       <Image
         style={{height: 94, width: 94}}
-        source="https://img.icons8.com/3d-fluency/94/user-male-circle.png"
+        source={photoProfile}
+        className='rounded-full overflow-hidden'
         contentFit="cover"
-      />
+        />
+        </View>
       {/* NAMA */}
       <View className='flex-row mt-2 gap-2'>
         <AntDesign name="user" size={24} color="#1f2937" />
@@ -158,13 +193,24 @@ export default function Index() {
       <View className='flex-row mt-1 gap-2'>
         <Text className='text-xs text-gray-600' style={{fontFamily:'Poppins-Regular'}} >{profile.jabatan}</Text>
       </View>
+        <View className='flex flex-row mt-3 gap-1'>
+          <Link href="/ubah_profil" className='bg-blue-100 hover:bg-blue-200 flex gap-1 flex-row px-3 py-2 rounded-full items-center'>
+              <FontAwesome5 name="user-edit" size={14} color="#1e40af" />
+              <Text className='text-blue-800 text-[0.6rem]'>Ubah Foto Profil</Text>
+          </Link>
+          <Link href="/(app)/ubah_password" className='bg-red-100 hover:bg-red-200 flex gap-1 flex-row px-3 py-2 rounded-full items-center'>
+              <MaterialCommunityIcons name="key-variant" size={14} color="#991b1b" />
+              <Text className='text-red-800 text-[0.6rem]'>Ubah Password</Text>
+          </Link>
+          <TouchableOpacity className='bg-neutral-100 hover:bg-neutral-200 flex gap-1 flex-row px-3 py-2 rounded-full items-center' onPress={logout}>
+            <MaterialCommunityIcons name="logout" size={14} className="text-neutral-600" />
+            <Text className='text-neutral-600 text-[0.6rem]'>Logout</Text>
+          </TouchableOpacity>
+        </View>
 
-      <TouchableOpacity style={{backgroundColor:'#d1d5db', width:80,  marginLeft: 'auto', marginRight:'auto', padding: 5,marginTop: 8, borderRadius: 20}} onPress={signOut}>
-          <Text style={{color:'#6b7280',textAlign:'center', fontSize:10}}>Pengaturan</Text>
-        </TouchableOpacity>
       </View>
 
-      <View className='h-0.5 mt-8 mb-4 w-full bg-gray-200'></View>
+      <View className='h-0.5 mt-5 mb-4 w-full bg-gray-200'></View>
 
     {/* REKAP KEHADIRAN */}
       <View className='flex-row justify-around'>
@@ -251,7 +297,7 @@ export default function Index() {
     {/* JADWAL BERIKUTNYA */}
     {profile.jadwal_berikutnya != null && (
     <View style={{marginLeft: 30, marginRight:30, marginTop:30}}>
-      <View style={{display:'flex', flexDirection:'row', justifyContent:'space-between', borderBottomWidth:1, paddingBottom:8, borderBottomColor:'#d4d4d8'}}>
+      <View style={{display:'flex', flexDirection:'row', justifyContent:'space-between', borderBottomWidth:1, paddingBottom:8, borderBottomColor:'#d4d4d8'}} className='mb-3'>
         <Text style={{fontSize:14, color:'#374151',fontWeight:'600'}}>Jadwal berikutnya</Text>
         <TouchableOpacity style={{backgroundColor:'#d1fae5', width: 100, padding: 5, borderRadius: 10}} onPress={absen}>
             <Text style={{fontFamily:'Poppins-Regular', color:'#10b981', textAlign:'center', fontSize:10}}>Lihat Jadwal</Text>
@@ -261,15 +307,15 @@ export default function Index() {
       {profile.jadwal_berikutnya != null && (
         <FlatList data={profile.jadwal_berikutnya} renderItem={({item, index}) => (
           <View className='my-2'>
-          <Text className='text-xs text-gray-600'>{formatTanggalIndonesia(item.tanggal)}, {item.kantor} | {item.shift}</Text>
-        </View>
+            <Text className='text-xs text-gray-600' style={{fontFamily:'Poppins-Regular'}}>{formatTanggalIndonesia(item.tanggal)}, {item.kantor} | {item.shift}</Text>
+          </View>
         )}
         />
       )}
     </View>
     )}
 
-    </ScrollView>
+    </View>
   );
 }
 
