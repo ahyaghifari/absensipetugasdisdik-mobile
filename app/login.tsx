@@ -33,6 +33,8 @@ export default function Login(){
             const req = await fetch(ApiUrl + '/login',{
                 method:'POST',
                 body:formData,
+            }).finally(() => {
+                setOnLogin(false)
             })
             const res = await req.json()
             if(res.status != 200){
@@ -44,7 +46,7 @@ export default function Login(){
             let userData : UserSession={
                 email: res.user.email,
                 nama: res.user.nama,
-                nik: res.user.nik,
+                kode: res.user.kode,
                 photo: null,
                 jabatan:res.user.jabatan,
                 token: res.access_token
@@ -53,6 +55,8 @@ export default function Login(){
             signIn(userData)
             router.navigate('/')
         } catch (error) {
+            setOnLogin(false)
+            console.log(error)
         //    setError("Username atau password belum benar")
         }
     }

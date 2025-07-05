@@ -65,8 +65,7 @@ export default function UbahProfil(){
                 body: formData
             })
             const res = await req.json()
-            if(res.status == 200){
-
+            if(res.status === 200){
                 
                  //  hapus foto profil
                     const fileUriLama = FileSystem.documentDirectory + 'profile.png';

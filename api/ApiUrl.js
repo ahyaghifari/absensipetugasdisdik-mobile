@@ -1,3 +1,2 @@
-const ApiUrl = 'https://1568-110-139-117-211.ngrok-free.app/api'
-// const ApiUrl = 'http://localhost:8080/api'
+const ApiUrl = 'https://90d8-125-164-99-19.ngrok-free.app/api'
 export default ApiUrl
