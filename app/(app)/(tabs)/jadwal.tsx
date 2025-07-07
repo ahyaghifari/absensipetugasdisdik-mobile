@@ -1,8 +1,29 @@
 import api from '@/api';
+import Entypo from '@expo/vector-icons/Entypo';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { ALPA, HADIR, IZIN, SAKIT } from '../../../constants/JadwalAbsensi';
+
+type Absensi = {
+  status_kehadiran : string,
+  waktu_absensi: string | null
+}
+
+type Jadwal = {
+  tanggal: string,
+  shift: string,
+  kantor: string,
+  jenis: string,
+  background: string,
+  color: string| null,
+  absensi: boolean,
+  absensi_masuk: Absensi | null,
+  absensi_pulang: Absensi | null
+}
 
 export default function JadwalScreen() {
 
@@ -29,81 +50,171 @@ export default function JadwalScreen() {
 
   LocaleConfig.defaultLocale = 'id'
 
+  const [onload, setOnLoad] = useState(true)
+  const [jadwal, setJadwal] = useState<Jadwal[]>([])
   
-  const [jadwal, setJadwal] = useState([])
   const [calendarMarked, setCalendarMarked] = useState({})
-  const [selected, setSelected] = useState('');
+  
+  const [selected, setSelected] = useState<string | undefined>('');
 
+  const [selectedJadwal, setSelectedJadwal] = useState<Jadwal | null>(null)
+
+  const getIconAbsensi = (status_kehadiran :any) =>{
+      if(status_kehadiran === HADIR){
+        return <Entypo name="check" size={17} color="green" />
+      }else if(status_kehadiran === SAKIT){
+        return <MaterialCommunityIcons name="emoticon-sick" size={17} color="yellow" />
+      }else if(status_kehadiran === IZIN){
+        return <Entypo name="info" size={17} color="blue" />
+      }else if(status_kehadiran === ALPA){
+        return <Entypo name="cross" size={17} color="red" />
+      }
+  }
+
+  const getStatusAbsensi = (status_kehadiran: string | undefined, waktu_absensi: string | null | undefined) => {
+    let warna = '#10b981'
+    if(status_kehadiran === SAKIT){
+      warna = '#f59e0b'
+    }else if(status_kehadiran === IZIN){
+      warna = '#0ea5e9'
+    }else if(status_kehadiran === ALPA){
+      warna = '#ef4444'
+    }
+    return (
+      <View className='flex flex-row justify-between items-center rounded-lg p-2 mt-2' style={{backgroundColor: warna}}>
+        <Text className='font-semibold text-white inline'>{status_kehadiran}</Text>
+        {waktu_absensi != null && (
+          <Text className='text-white opacity-80 text-sm'>{waktu_absensi}</Text>
+        )}
+      </View>
+    )
+  }
+
+  const chooseJadwal = (tanggal : string | undefined)=>{
+    let selected = jadwal.find((j) => j.tanggal === tanggal)
+    if(selected !== undefined){
+      setSelectedJadwal(selected)
+    }
+  }
+
+  const formatTanggal = (tanggalString: string) => {
+  const tanggal = new Date(tanggalString);
+    return new Intl.DateTimeFormat('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: '2-digit',
+    }).format(tanggal);
+  };
 
   useEffect(() => {
     api.get('/jadwal').then((res) => {
       setJadwal(res.data.data)
-      setCalendarMarked(convertToMarkedDates(res.data.data))
+      setOnLoad(false)
+      // setCalendarMarked(convertToMarkedDates(res.data.data))
     })
   }, []);
 
-  const convertToMarkedDates = (data : any) => {
-    const result: { [key: string]: any } = {};
+  // const convertToMarkedDates = (data : any) => {
+  //   const result: { [key: string]: any } = {};
 
-    data.forEach((item: { tanggal: string; background: any | null; color: any | null}) => {
-      result[item.tanggal] = {
-        customStyles: {
-          container: {
-            backgroundColor: item.background != null ? item.background : '',
-          },
-          text: {
-            color: item.color != null ? item.color : 'black',
-          }
-        }
-      };
-    });
+  //   data.forEach((item: { tanggal: string; background: any | null; color: any | null}) => {
+  //     result[item.tanggal] = {
+  //       customStyles: {
+  //         container: {
+  //           dotColor: 'red',
+  //           backgroundColor: item.background != null ? item.background : '',
+  //         },
+  //         text: {
+  //           color: item.color != null ? item.color : 'black',
+  //         }
+  //       }
+  //     };
+  //   });
 
-    return result;
-  };
+  //   return result;
+  // };
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{padding:15}}>
-        <ScrollView>
+      <SafeAreaView>
+        <ScrollView style={{padding:15, paddingBottom:100}}>
+        {/* kalender */}
         <View className='bg-white w-full rounded-lg p-2 overflow-hidden'>
           <Calendar
             monthFormat='MMMM yyyy'
-            onDayPress={day => {  
-              setSelected(day.dateString);
-            }}
+            // onDayPress={day => {  
+            //   console.log(day.dateString)
+            //   chooseJadwal(day.dateString);
+            // }}
             markingType='custom'
-            markedDates={{
-              ...calendarMarked,
-              [selected]: {selected: true, disableTouchEvent: true, customStyles: {container:{backgroundColor: '#ef4444'}}}
+            // markedDates={{
+            //   ...calendarMarked,
+            //   [selected]: {selected: true, disableTouchEvent: true, customStyles: {container:{backgroundColor: '#ef4444'}}}
+            // }}
+            dayComponent={({date, state}) => {
+              let jadwalIndex = jadwal.findIndex((j) => j.tanggal === date?.dateString)
+              return (
+                <TouchableOpacity onPress={() => chooseJadwal(date?.dateString)} className='aspect-square justify-center items-center flex rounded-full p-2 relative' style={{backgroundColor: jadwalIndex >= 0 ? jadwal[jadwalIndex].background : 'white', }}>
+                  <Text className='' style={{color: jadwalIndex >= 0 && jadwal[jadwalIndex].color != null ? jadwal[jadwalIndex].color : 'black'}}>{date?.day}</Text>
+                  {jadwalIndex >= 0 && jadwal[jadwalIndex].absensi === true && (
+                    <View className='flex flex-row gap-1 absolute -right-1 -bottom-1' >
+                      {getIconAbsensi(jadwal[jadwalIndex].absensi_masuk?.status_kehadiran)}
+                      {getIconAbsensi(jadwal[jadwalIndex].absensi_pulang?.status_kehadiran)}
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )
             }}
           />
         </View>
-        <View className='mt-3 p-2'>
-          {/* <Text className='text-gray-600'>Jadwal Berikutnya</Text> */}
-          <View className='bg-white rounded-lg p-3 mt-3 border border-gray-200'>
-              <View className='bg-emerald-500 p-2 rounded'>
-                <Text className='text-center font-semibold text-white p-2'>Rabu, 12 Juni 2025</Text>
-                <Text className='text-center text-emerald-200'>Dinas Pendidikan | MALAM</Text>
+
+        {onload === true && (
+          <ActivityIndicator size="large" style={{marginTop: 20}} />
+        )}
+
+        {selectedJadwal != null && (
+        <View className='p-2 bg-white mt-5 rounded-lg mb-20'>
+          {/* jadwal */}
+          <View className='bg-emerald-100/70 rounded p-3'>
+            <View className='flex items-center flex-row gap-3'>
+                <FontAwesome5 name="calendar-day" size={18} color="#047857" />
+                <Text className='font-semibold text-emerald-700 text-sm' style={{fontFamily: 'Poppins-Regular'}}>{formatTanggal(selectedJadwal.tanggal)}</Text>
+            </View>
+            <View className='flex items-center flex-row gap-3 mt-2'>
+                <Entypo name="location" size={18} color="#047857" />
+                <Text className='text-emerald-700 text-sm' style={{fontFamily: 'Poppins-Regular'}}>{selectedJadwal.kantor} | {selectedJadwal.shift}</Text>
+            </View>
+          </View>
+          <View className='h-0.5 bg-gray-200 my-4'></View>
+          {/* absensi masuk */}
+          <View className='bg-amber-50 p-1.5'>
+            <View className='flex justify-between flex-row'>
+              <View>
+                <Text className='text-amber-600 font-semibold text-lg'>Absensi Masuk</Text>
+                <Text className=' mt-1 text-gray-600'>08:00 - 10:00</Text>
               </View>
-              <View className='h-0.5 bg-gray-100 my-2'></View>
-              <View className='flex flex-row  justify-around'>
-                <View className='flex flex-col  items-center p-3 w-1/2 bg-amber-100/80'>
-                  <Text className='text-sm text-amber-600'>Absensi Masuk</Text>
-                  <Text className='text-white font-semibold my-2 bg-green-500 p-1 rounded'>HADIR</Text>
-                  <Text className='text-gray-500 text-xs'>2025-12-01 12:12:12</Text>
-                  {/* <Text className='text-gray-800'>08:00 - 12:00</Text> */}
-                </View>
-                <View className='flex flex-col items-center p-3 w-1/2 bg-red-100/80 '>
-                  <Text className='text-sm text-red-400'>Absensi Pulang</Text>
-                  <Text className='text-white bg-sky-500 font-semibold my-2 p-1 rounded'>IZIN</Text>
-                  <Text className='text-gray-500 text-xs'>2025-12-01 12:12:12</Text>
-                  {/* <Text className='text-gray-800'>08:00 - 12:00</Text> */}
-                </View>
+              <MaterialCommunityIcons name="location-enter" size={30} color="#d97706" />
+            </View>
+            {selectedJadwal.absensi === true && (
+              getStatusAbsensi(selectedJadwal.absensi_masuk?.status_kehadiran, selectedJadwal.absensi_masuk?.waktu_absensi)
+            )}
+          </View>
+          {/* absensi pulang */}
+          <View className='bg-red-50 p-1.5 mt-3'>
+            <View className='flex justify-between flex-row'>
+              <View>
+                <Text className='text-red-600 font-semibold text-lg'>Absensi Pulang</Text>
+                <Text className=' mt-1 text-gray-600'>08:00 - 10:00</Text>
               </View>
-              <View className='h-0.5 bg-gray-100 my-2'></View>
-              <Text className='mt-2 text-center text-sm text-gray-500'>Jumlah Foto Kegiatan : 3</Text>
+              <MaterialCommunityIcons name="location-exit" size={30} color="#ef4444" />
+            </View>
+            {selectedJadwal.absensi === true && (
+              getStatusAbsensi(selectedJadwal.absensi_pulang?.status_kehadiran, selectedJadwal.absensi_pulang?.waktu_absensi)
+            )}
           </View>
         </View>
+        )}
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>

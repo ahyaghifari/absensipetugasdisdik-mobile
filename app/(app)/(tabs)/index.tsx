@@ -8,7 +8,7 @@ import * as FileSystem from 'expo-file-system';
 import { Image } from 'expo-image';
 import { Link, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Platform, RefreshControl, ScrollView, Text, View } from "react-native";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../../ctx';
 
@@ -19,6 +19,7 @@ type BerandaData = {
   hadir: number,
   absen: number,
   sakit: number,
+  izin: number,
   jadwal: Jadwal | null,
   jadwalId: string | null,
   absensi: Absensi|null,
@@ -36,6 +37,7 @@ const defaultProfile :BerandaData ={
   hadir: 0,
   absen: 0,
   sakit: 0,
+  izin: 0,
   jadwal: null,
   jadwalId: null,
   absensi: null,
@@ -52,7 +54,7 @@ export default function Index() {
   const [refreshing, setRefreshing] = useState(false)
   const [profile, setProfile] = useState<BerandaData>(defaultProfile)
   const navigation = useNavigation();
-  const {signOut, session} = useSession()
+  const {session} = useSession()
   
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -61,23 +63,6 @@ export default function Index() {
       setRefreshing(false);
     }, 2000);
   }, []);
-
-  const logout = () =>{
-    if(Platform.OS === 'web'){
-      if(confirm('Yakin logout') === true){
-        signOut()
-      }
-    }else{
-      return Alert.alert('Logout', 'Yakin ingin logout?', [
-        {
-          text: 'Batal',
-          onPress: () => false,
-          style: 'cancel',
-        },
-        {text: 'Ya, saya yakin', onPress: () => signOut()},
-      ]);
-    }
-  } 
   
    const loadSavedImage = async () => {
     const fileUri = FileSystem.documentDirectory + 'profile.png';
@@ -140,6 +125,7 @@ export default function Index() {
             hadir: res.hadir,
             absen: res.absen,
             sakit: res.sakit,
+            izin: 0,
             jadwal: jadwal,
             jadwalId: jadwal_id,
             absensi: absensi,
@@ -163,11 +149,11 @@ export default function Index() {
   }, []);
 
   return (
-    <SafeAreaProvider style={{backgroundColor:'white'}}>
+    <SafeAreaProvider style={{backgroundColor:'white' }}>
       <SafeAreaView>
         <ScrollView 
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          contentContainerStyle={{flex: 1,backgroundColor: 'white'}}
+          contentContainerStyle={{flex: 1,backgroundColor: 'white', paddingBottom: 30}}
         >
           <View className='bg-blue-600 p-3 pt-5'>
             <Text style={{color: 'white', fontFamily: 'Poppins-Regular', fontSize:12, opacity: 0.7}}>Aplikasi Absensi Petugas</Text>
@@ -188,7 +174,7 @@ export default function Index() {
             <View>
             {/* NAMA */}
             <View className='flex-row mt-2 gap-2'>
-              <Text style={{fontFamily:'Poppins-Bold'}} className='text-gray-700 text-lg'>{profile.nama}</Text>
+              <Text style={{fontFamily:'Poppins-Bold'}} className='text-gray-600 text-lg'>{profile.nama}</Text>
             </View>
             {/* kode */}
             <View className='flex-row mt-1 gap-2'>
@@ -202,14 +188,6 @@ export default function Index() {
               <Link href="/(app)/ubah_profil" className='bg-blue-100 hover:bg-blue-200 flex gap flex-row px-3 py-2 rounded-full items-center'>
                   <Text className='text-blue-800 text-[0.6rem] ml-2'>Ubah Foto Profil</Text>
               </Link>
-              {/* <Link href="/(app)/ubah_password" className='bg-red-100 hover:bg-red-200 flex gap-1 flex-row px-3 py-2 rounded-full items-center'>
-                  <MaterialCommunityIcons name="key-variant" size={14} color="#991b1b" />
-                  <Text className='text-red-800 text-[0.6rem]'>Ubah Password</Text>
-              </Link>
-              <TouchableOpacity className='bg-neutral-100 hover:bg-neutral-200 flex gap-1 flex-row px-3 py-2 rounded-full items-center' onPress={logout}>
-                <MaterialCommunityIcons name="logout" size={14} className="text-neutral-600" />
-                <Text className='text-neutral-600 text-[0.6rem]'>Logout</Text>
-              </TouchableOpacity> */}
             </View>
           </View>
           </View>
@@ -219,28 +197,36 @@ export default function Index() {
         {/* REKAP KEHADIRAN */}
           <View className='flex-row justify-around'>
             {/* HADIR */}
-            <View style={{display:'flex', flexDirection: 'row', gap: 5,justifyContent: 'space-around'}}>
-            <AntDesign name="checkcircle" size={20} color="#4ade80" />
-              <View>
-              <Text style={{fontFamily:'Poppins-Regular'}} className='text-gray-500 text-sm'>Hadir</Text>
-              <Text className='text-xl text-gray-600' style={{fontFamily:'Poppins-Bold'}} >{profile.hadir}</Text>
+            <View className='flex flex-col items-center'>
+              <View className='flex flex-row items-center gap-1'>
+                <AntDesign name="checkcircle" size={18} color="#4ade80" />
+                <Text style={{fontFamily:'Poppins-Regular'}} className='text-gray-500 text-xs'>Hadir</Text>
               </View>
-            </View>
-            {/* ABSEN */}
-            <View style={{display:'flex', flexDirection: 'row', gap: 5,justifyContent: 'space-around'}}>
-            <AntDesign name="closecircleo" size={18} color="#ef4444" />
-              <View>
-              <Text style={{fontFamily:'Poppins-Regular'}} className='text-gray-500 text-sm'>Absen</Text>
-              <Text  className='text-xl text-gray-600' style={{fontFamily:'Poppins-Bold'}} >{profile.absen}</Text>
-              </View>
+              <Text className='text-gray-600' style={{fontFamily:'Poppins-Bold'}} >{profile.hadir}</Text>
             </View>
             {/* SAKIT */}
-            <View style={{display:'flex', flexDirection: 'row', gap: 5,justifyContent: 'space-around'}}>
-            <MaterialIcons name="sick" size={20} color="#f59e0b" />
-              <View>
-              <Text style={{fontFamily:'Poppins-Regular'}} className='text-gray-500 text-sm'>Sakit</Text>
-              <Text  className='text-xl text-gray-600' style={{fontFamily:'Poppins-Bold'}} >{profile.sakit}</Text>
+            <View className='flex flex-col items-center'>
+              <View className='flex flex-row items-center gap-1'>
+                <MaterialIcons name="sick" size={18} color="#f59e0b" />
+                <Text className='text-gray-500 text-sm' >Sakit</Text>
               </View>
+              <Text  className='text-gray-600' style={{fontFamily:'Poppins-Bold'}} >{profile.sakit}</Text>
+            </View>
+            {/* IZIN */}
+            <View className='flex flex-col items-center'>
+              <View className='flex flex-row items-center gap-1'>
+                <MaterialIcons name="info" size={18} color="#0ea5e9" />
+                <Text className='text-gray-500 text-sm' >Izin</Text>
+              </View>
+              <Text  className='text-gray-600' style={{fontFamily:'Poppins-Bold'}} >{profile.izin}</Text>
+            </View>
+            {/* ABSEN */}
+            <View className='flex flex-col items-center'>
+              <View className='flex flex-row items-center gap-1'>
+                <AntDesign name="closecircleo" size={18} color="#ef4444" />
+                <Text style={{fontFamily:'Poppins-Regular'}} className='text-gray-500 text-xs'>Absen</Text>
+              </View>
+              <Text  className='text-gray-600' style={{fontFamily:'Poppins-Bold'}} >{profile.absen}</Text>
             </View>
           </View>
 

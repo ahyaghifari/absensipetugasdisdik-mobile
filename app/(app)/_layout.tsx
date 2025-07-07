@@ -1,7 +1,6 @@
 import { useFonts } from "expo-font";
 import { Redirect, Stack } from "expo-router";
 import { Text } from 'react-native';
-
 import '../../assets/global.css';
 import { useSession } from "../ctx";
 

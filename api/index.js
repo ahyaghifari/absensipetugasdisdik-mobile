@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 let api = axios
-const baseUrl = 'https://90d8-125-164-99-19.ngrok-free.app'
+const baseUrl = 'https://b164-180-245-200-4.ngrok-free.app'
 const apiUrl = baseUrl + '/api'
 
 api.defaults.baseURL = apiUrl

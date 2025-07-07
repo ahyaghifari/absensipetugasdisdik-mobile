@@ -103,7 +103,7 @@ export default function Absen() {
         <View style={{flex:1, backgroundColor:'white'}}>
             <ToastManager />
             <View className="bg-emerald-500 p-4">
-                <Text style={{fontFamily:'Poppins-Bold'}} className='text-white text-sm text-center'>ABSENSI MASUK</Text>
+                <Text style={{fontFamily:'Poppins-Bold'}} className='text-white text-sm text-center'>ABSENSI {waktuAbsensi}</Text>
                 <Text style={{fontFamily:'Poppins-Regular'}} className='text-white text-lg my-2 text-center'>Dinas Pendidikan Kota Banjarbaru</Text>
                 <Text style={{fontFamily:'Poppins-Regular'}} className='text-white text-xs my-1 text-center'>Waktu Absensi : 08:00 - 12:00</Text>
             </View>

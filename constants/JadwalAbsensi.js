@@ -1,0 +1,10 @@
+const SHIFT_PAGI = 'PAGI'
+const SHIFT_MALAM = 'MALAM'
+
+const HADIR = 'HADIR'
+const SAKIT = 'SAKIT'
+const IZIN = 'IZIN'
+const ALPA = 'ALPA'
+
+export { ALPA, HADIR, IZIN, SAKIT, SHIFT_MALAM, SHIFT_PAGI }
+
