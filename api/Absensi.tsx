@@ -7,7 +7,8 @@ export type Absensi = {
         bisa_absen: boolean,
         sudah_absen: boolean,
         status_kehadiran: string,
-        waktu_absen: string
+        waktu_absen: string,
+        keterangan: string | null
     },
     absensi_pulang: {
         waktu_awal: string,
@@ -16,6 +17,7 @@ export type Absensi = {
         sudah_absen: boolean,
         status_kehadiran: string,
         waktu_absen: string
+        keterangan: string | null
     },
     jumlah_foto_kegiatan:number
 }

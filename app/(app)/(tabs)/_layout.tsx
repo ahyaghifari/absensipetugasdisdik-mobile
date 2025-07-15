@@ -9,6 +9,9 @@ export default function RootLayout() {
           backgroundColor: '#2563eb',
         },
         headerTintColor: '#fff',
+        tabBarStyle: {
+          backgroundColor: 'white'
+        }
       }}>
     <Tabs.Screen name="index" options={{ title:'Beranda', tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={24} />

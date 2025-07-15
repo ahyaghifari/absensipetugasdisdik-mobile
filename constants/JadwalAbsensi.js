@@ -4,7 +4,7 @@ const SHIFT_MALAM = 'MALAM'
 const HADIR = 'HADIR'
 const SAKIT = 'SAKIT'
 const IZIN = 'IZIN'
-const ALPA = 'ALPA'
+const ALPA = 'TANPA KABAR'
 
 export { ALPA, HADIR, IZIN, SAKIT, SHIFT_MALAM, SHIFT_PAGI }
 

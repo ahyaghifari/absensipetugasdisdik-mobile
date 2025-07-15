@@ -25,6 +25,7 @@ export default function RootLayout() {
   <Stack>
     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
     <Stack.Screen name="absen" options={{title:'Absensi', }}></Stack.Screen>
+    <Stack.Screen name="pembelaan" options={{title:'Keterangan Ketidakhadiran', presentation: 'modal'}}></Stack.Screen>
     <Stack.Screen name="foto_kegiatan" options={{title:'Foto Kegiatan', }}></Stack.Screen>
     <Stack.Screen name="ubah_profil" options={{title: 'Ubah Foto Profil', presentation: 'modal'}}></Stack.Screen>
     <Stack.Screen name="ubah_password" options={{title:'Ubah Password'}}></Stack.Screen>

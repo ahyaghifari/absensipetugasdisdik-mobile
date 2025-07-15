@@ -28,8 +28,8 @@ export default function UbahPassword() {
             console.log(res.data)
             setPasswordBaru("")
             setPasswordLama("")
+            Toast.success(res.data.message)
             setTimeout(() => {
-                Toast.success(res.data.message)
                 signOut()
             }, 2000);
             router.push('/(app)/(tabs)')

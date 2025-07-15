@@ -1,9 +1,10 @@
-import ApiUrl from "@/api/ApiUrl";
+import api from "@/api";
 import type { UserSession } from "@/constants/UserSession";
+import * as Application from 'expo-application';
 import { Image } from "expo-image";
 import { router, useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Platform, SafeAreaView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSession } from "./ctx";
 
 export default function Login(){
@@ -13,52 +14,53 @@ export default function Login(){
     const [email,setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
+    const [deviceId, setDeviceId] = useState("")
+
+    const getDeviceId = async () => {
+        if(Platform.OS === 'android'){
+            setDeviceId(Application.getAndroidId());
+        }else if(Platform.OS === 'ios'){
+           let waitId = await Application.getIosIdForVendorAsync()
+           if(waitId !== null){
+            setDeviceId(waitId)
+           }
+        }
+
+    }
+
     useEffect(()=>{
         navigation.setOptions({ headerShown: false });
-
+        getDeviceId()
     }, [])
 
     const login = async () =>{
         setError("")
-        if(email == "" || password == ""){
+        if(email === "" || password === ""){
             setError("Username dan password belum diisi")
             return
         }
         setOnLogin(true)
-        const formData = new FormData()
-        formData.append("email", email)
-        formData.append("password", password)
-
-        try {
-            const req = await fetch(ApiUrl + '/login',{
-                method:'POST',
-                body:formData,
-            }).finally(() => {
-                setOnLogin(false)
-            })
-            const res = await req.json()
-            if(res.status != 200){
-                setError(res.messages.error)
-                setPassword("")
-                setOnLogin(false)
-                return
-            }
+        api.post('/login', {
+            email:email,
+            password: password,
+            device_id : deviceId
+        }).then((res) => {
             let userData : UserSession={
-                email: res.user.email,
-                nama: res.user.nama,
-                kode: res.user.kode,
+                email: res.data.user.email,
+                nama: res.data.user.nama,
+                kode: res.data.user.kode,
                 photo: null,
-                jabatan:res.user.jabatan,
-                token: res.access_token
+                jabatan:res.data.user.jabatan,
+                token: res.data.access_token
             }
 
             signIn(userData)
             router.navigate('/')
-        } catch (error) {
+        }).catch((err) => {
+            setError(err.response.data.message)
             setOnLogin(false)
-            console.log(error)
-        //    setError("Username atau password belum benar")
-        }
+            return
+        })
     }
 
     return (
@@ -79,7 +81,7 @@ export default function Login(){
             </View>
            
             <View className="absolute bg-white shadow-sm shadow-gray-700 p-3 rounded-lg left-auto right-auto w-10/12">
-                {error != "" && (
+                {error !== "" && (
                 <View style={{backgroundColor:'#fee2e2', padding:5,borderRadius:5}}>
                     <Text style={{color:'#b91c1c',textAlign:'center'}} className="text-xs">{error}</Text>
                 </View>
@@ -113,16 +115,3 @@ export default function Login(){
         </SafeAreaView>
     )
 }
-
-const styles = StyleSheet.create({
-    input: {
-      height: 40,
-      borderWidth: 1,
-      padding: 10,
-      color:'#374151',
-      backgroundColor:'white',
-      borderRadius:10,
-      borderColor:'#374151',
-      fontSize:12
-    },
-  });

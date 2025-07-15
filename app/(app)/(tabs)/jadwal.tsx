@@ -1,9 +1,10 @@
 import api from '@/api';
+import { useSession } from '@/app/ctx';
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ALPA, HADIR, IZIN, SAKIT } from '../../../constants/JadwalAbsensi';
@@ -26,6 +27,8 @@ type Jadwal = {
 }
 
 export default function JadwalScreen() {
+    const {session} = useSession()
+
 
   LocaleConfig.locales['id'] = {
   monthNames: [
@@ -54,10 +57,42 @@ export default function JadwalScreen() {
   const [jadwal, setJadwal] = useState<Jadwal[]>([])
   
   const [calendarMarked, setCalendarMarked] = useState({})
-  
+  const [colorJadwal, setColorJadwal] = useState('green') 
+  const [refreshing, setRefreshing] = useState(false)
+
   const [selected, setSelected] = useState<string | undefined>('');
 
   const [selectedJadwal, setSelectedJadwal] = useState<Jadwal | null>(null)
+
+  const isColorDark = (hex: string) => {
+    // Hapus tanda "#" jika ada
+    hex = hex.replace('#', '');
+
+    // Konversi 3 digit HEX ke 6 digit
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+
+    // Konversi HEX ke RGB
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    // Hitung luminance (per WCAG)
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+    // Jika luminance < 128, anggap gelap
+    return luminance < 128;
+  }
+
+
+  const onRefresh = useCallback(() => {
+      setRefreshing(true);
+      getJadwal()
+      setTimeout(() => {
+        setRefreshing(false);
+      }, 2000);
+    }, []);
 
   const getIconAbsensi = (status_kehadiran :any) =>{
       if(status_kehadiran === HADIR){
@@ -93,6 +128,7 @@ export default function JadwalScreen() {
   const chooseJadwal = (tanggal : string | undefined)=>{
     let selected = jadwal.find((j) => j.tanggal === tanggal)
     if(selected !== undefined){
+      setColorJadwal(selected.background)
       setSelectedJadwal(selected)
     }
   }
@@ -107,12 +143,17 @@ export default function JadwalScreen() {
     }).format(tanggal);
   };
 
-  useEffect(() => {
-    api.get('/jadwal').then((res) => {
+  const getJadwal = () => {
+    setOnLoad(true)
+    api.get('/jadwal', {params: {kode: session?.kode}}).then((res) => {
       setJadwal(res.data.data)
       setOnLoad(false)
       // setCalendarMarked(convertToMarkedDates(res.data.data))
     })
+  }
+
+  useEffect(() => {
+    getJadwal()
   }, []);
 
   // const convertToMarkedDates = (data : any) => {
@@ -138,7 +179,9 @@ export default function JadwalScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView>
-        <ScrollView style={{padding:15, paddingBottom:100}}>
+        <ScrollView 
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        style={{padding:15, paddingBottom:100}}>
         {/* kalender */}
         <View className='bg-white w-full rounded-lg p-2 overflow-hidden'>
           <Calendar
@@ -176,14 +219,14 @@ export default function JadwalScreen() {
         {selectedJadwal != null && (
         <View className='p-2 bg-white mt-5 rounded-lg mb-20'>
           {/* jadwal */}
-          <View className='bg-emerald-100/70 rounded p-3'>
+          <View className='rounded p-3' style={{backgroundColor: colorJadwal}}>
             <View className='flex items-center flex-row gap-3'>
-                <FontAwesome5 name="calendar-day" size={18} color="#047857" />
-                <Text className='font-semibold text-emerald-700 text-sm' style={{fontFamily: 'Poppins-Regular'}}>{formatTanggal(selectedJadwal.tanggal)}</Text>
+                <FontAwesome5 name="calendar-day" size={18} color={isColorDark(colorJadwal) ? 'white' : '#1f2937'} />
+                <Text className='font-semibold text-sm' style={{fontFamily: 'Poppins-Regular', color: isColorDark(colorJadwal) ? 'white' : '#1f2937'}}>{formatTanggal(selectedJadwal.tanggal)}</Text>
             </View>
             <View className='flex items-center flex-row gap-3 mt-2'>
-                <Entypo name="location" size={18} color="#047857" />
-                <Text className='text-emerald-700 text-sm' style={{fontFamily: 'Poppins-Regular'}}>{selectedJadwal.kantor} | {selectedJadwal.shift}</Text>
+                <Entypo name="location" size={18} color={isColorDark(colorJadwal) ? 'white' : '#1f2937'} />
+                <Text className='text-sm' style={{fontFamily: 'Poppins-Regular', color:isColorDark(colorJadwal) ? 'white' : '#1f2937'}}>{selectedJadwal.kantor} | {selectedJadwal.shift}</Text>
             </View>
           </View>
           <View className='h-0.5 bg-gray-200 my-4'></View>

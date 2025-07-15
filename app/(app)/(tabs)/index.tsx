@@ -1,6 +1,7 @@
 import { Absensi } from '@/api/Absensi';
 import ApiUrl from '@/api/ApiUrl';
 import { Jadwal } from '@/api/Jadwal';
+import { ALPA, IZIN, SAKIT } from '@/constants/JadwalAbsensi';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -11,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../../ctx';
+
 
 type BerandaData = {
   nama: string,
@@ -83,15 +85,16 @@ export default function Index() {
       const req = await fetch(ApiUrl + '/beranda?' + params,{method:'get'})
       if(req){
         const res = await req.json()
-        // console.log(res)
         let jadwal : Jadwal | null = null
         let absensi : Absensi|null = null
         let jadwal_berikutnya : Jadwal[] | null = null
         let jadwal_id : string | null = null
         
+
         if(res.jadwal != null){
+          let yourDate = new Date()          
           jadwal = {
-            tanggal: null,
+            tanggal: yourDate.toISOString().split('T')[0],
             kantor: res.jadwal.kantor,
             shift:res.jadwal.shift,
           }
@@ -141,6 +144,65 @@ export default function Index() {
         
     }
 
+  const getStatusAbsensi = (status: string, absensi: Absensi, waktu_absensi: string) => {
+    let warnaWaktuAbsensi = '#065f46'
+    let warnaStatusKehadiran = '#059669'
+    let warnaStatus = '#34d399'
+
+    if(status === SAKIT){
+      warnaWaktuAbsensi = '#92400e'
+      warnaStatusKehadiran = '#d97706'
+      warnaStatus = '#fbbf24'
+    }
+
+    if(status === IZIN){
+      warnaWaktuAbsensi = '#075985'
+      warnaStatusKehadiran = '#0284c7'
+      warnaStatus = '#0ea5e9'
+    }
+
+    if(status === ALPA){
+      warnaWaktuAbsensi = '#991b1b'
+      warnaStatusKehadiran = '#dc2626'
+      warnaStatus = '#ef4444'
+    }
+
+    return (
+      <View>
+        <Text className='text-xs text-center font-semibold' style={{color: warnaWaktuAbsensi}}>Anda sudah diabsensi pada {profile.absensi?.absensi_pulang.waktu_absen}</Text>
+        <Text className='text-xs text-center mt-1' style={{color: warnaStatusKehadiran}}>Status kehadiran</Text>
+        <Text className='text-sm text-center rounded-lg text-white mt-1 font-semibold p-2 capitalize' style={{backgroundColor: warnaStatus}}>{status}</Text>
+
+        {profile.absensi?.absensi_masuk.status_kehadiran === ALPA && waktu_absensi === 'MASUK' && (
+          <View className='mt-3'>
+            {profile.absensi.absensi_masuk.keterangan === null && (
+              <View>
+                <Text className='text-center mt-2 text-sm'>BELUM ADA KETERANGAN</Text>
+               <Link href={{pathname: '/(app)/pembelaan', params: {absensi_id : absensi.id, tanggal: profile.jadwal?.tanggal, kantor: profile.jadwal?.kantor, waktu_absensi: waktu_absensi, shift: profile.jadwal?.shift == null ? '-' : profile.jadwal.shift}}}  className='bg-white mt-2 text-sm rounded p-2 text-center border border-red-300 w-full'><Text className='text-red-600'>Berikan Keterangan / Pembelaan</Text></Link>
+              </View>
+            )}
+            {profile.absensi.absensi_masuk.keterangan !== null && (
+              <Text className='text-xs text-red-700'>Keterangan : {profile.absensi.absensi_masuk.keterangan}</Text>
+            )}
+          </View>
+        )}
+        {profile.absensi?.absensi_pulang.status_kehadiran === ALPA && waktu_absensi === 'PULANG' && (
+          <View className='mt-3'>
+            {profile.absensi.absensi_pulang.keterangan === null && (
+              <View>
+                <Text className='text-center mt-2 text-sm'>BELUM ADA KETERANGAN</Text>
+               <Link href={{pathname: '/(app)/pembelaan', params: {absensi_id : absensi.id, tanggal: profile.jadwal?.tanggal, kantor: profile.jadwal?.kantor, waktu_absensi: waktu_absensi, shift: profile.jadwal?.shift == null ? '-' : profile.jadwal.shift}}}  className='bg-white mt-2 text-sm rounded p-2 text-center border border-red-300 w-full'><Text className='text-red-600'>Berikan Keterangan / Pembelaan</Text></Link>
+              </View>
+            )}
+            {profile.absensi.absensi_pulang.keterangan !== null && (
+              <Text className='text-xs text-red-700'>Keterangan : {profile.absensi.absensi_pulang.keterangan}</Text>
+            )}
+          </View>
+        )}
+      
+      </View>
+    )
+  }
   useEffect(() => {
     getProfile()
     setPhotoProfil(defaultPhotoProfile)
@@ -286,14 +348,10 @@ export default function Index() {
               )}
               {/* sudah absen */}
               {profile.absensi?.absensi_masuk.sudah_absen && (
-                <View>
-                  <Text className='text-xs text-amber-800 text-center font-semibold'>Anda sudah diabsensi pada {profile.absensi?.absensi_masuk.waktu_absen}</Text>
-                  <Text className='text-xs text-amber-600 text-center mt-1'>Status kehadiran</Text>
-                  <Text className='text-sm text-center bg-green-400 rounded-lg text-white mt-1 font-semibold p-2'>HADIR</Text>
-                </View>
+                getStatusAbsensi(profile.absensi.absensi_masuk.status_kehadiran, profile.absensi, 'MASUK')
               )}
             </View>
-            {/* pulang */}
+            {/* absensi pulang */}
             <View className='mt-5 bg-red-100 p-3 rounded-xl border border-red-300'>
               <Text className='text-xs text-red-700 text-center mb-3'>Absensi Pulang | {profile.absensi?.absensi_pulang.waktu_awal} - {profile.absensi?.absensi_pulang.waktu_akhir}</Text>
               {/* belum bisa absen masuk */}
@@ -308,11 +366,7 @@ export default function Index() {
               )}
               {/* sudah absen */}
               {profile.absensi?.absensi_pulang.sudah_absen && (
-                <View>
-                  <Text className='text-xs text-red-800 text-center font-semibold'>Anda sudah diabsensi pada {profile.absensi?.absensi_pulang.waktu_absen}</Text>
-                  <Text className='text-xs text-red-600 text-center mt-1'>Status kehadiran</Text>
-                  <Text className='text-sm text-center bg-green-400 rounded-lg text-white mt-1 font-semibold p-2'>HADIR</Text>
-                </View>
+                getStatusAbsensi(profile.absensi.absensi_pulang.status_kehadiran, profile.absensi, 'PULANG')
               )}
             </View>
           </View>
